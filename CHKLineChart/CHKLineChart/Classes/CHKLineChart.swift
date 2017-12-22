@@ -748,6 +748,7 @@ extension CHKLineChartView {
      */
     fileprivate func drawSection(_ section: CHSection) {
         
+        
         let context = UIGraphicsGetCurrentContext()
         context?.setShouldAntialias(false)
         context?.setLineWidth(self.lineWidth)
@@ -988,6 +989,7 @@ extension CHKLineChartView {
         } else {
             //不分页显示，全部系列绘制到图表上
             for serie in section.series {
+                
                 self.drawSerie(serie)
             }
         }

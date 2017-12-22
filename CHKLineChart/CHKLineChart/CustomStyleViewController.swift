@@ -49,7 +49,7 @@ class CustomStyleViewController: UIViewController {
         loopCount = loopCount + 1
         let session = URLSession.shared
         //
-        let urlStr = "https://api.huobi.pro/market/history/kline?symbol=btcusdt&period=15min&size=500"
+        let urlStr = "https://api.huobi.pro/market/history/kline?symbol=btcusdt&period=1min&size=500"
         
         //        let url = URL(string: "https://www.btc123.com/kline/klineapi?symbol=chbtc\(self.selectexPair)&type=\(self.selectTime)&size=\(size)")
         
@@ -180,7 +180,7 @@ extension CustomStyleViewController: CHKLineChartDelegate {
     ///
     /// - returns:
     func kLineChart(chart: CHKLineChartView, decimalAt section: Int) -> Int {
-        return 2
+        return 4
     }
     
     

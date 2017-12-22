@@ -27,7 +27,7 @@ class DemoSelectViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         
         let story = UIStoryboard.init(name: "Main", bundle: nil)
-        let name = "ChartDemoViewController"
+        let name = "CustomStyleViewController"
         let vc = story.instantiateViewController(withIdentifier: name)
         self.present(vc, animated: true, completion: nil)
 

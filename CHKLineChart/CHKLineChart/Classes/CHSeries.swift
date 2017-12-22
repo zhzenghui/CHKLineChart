@@ -19,6 +19,8 @@ public struct CHSeriesKey {
     public static let ema = "EMA"
     public static let kdj = "KDJ"
     public static let macd = "MACD"
+    public static let boll = "BOLL"
+
 }
 
 
@@ -30,6 +32,8 @@ public struct CHSeriesKey {
 /// MA/EMA线段：包含一个线点线模型（CHLineModel）
 /// KDJ线段：包含3个线点线模型（CHLineModel），3个点线的数值根据KDJ指标算法计算所得
 /// MACD线段：包含2个线点线模型（CHLineModel），1个条形点线模型
+/// BOLL线段：包含3个线点线模型（CHLineModel），3个点线的数值根据KDJ指标算法计算所得
+
 open class CHSeries: NSObject {
  
     open var key = ""
@@ -147,6 +151,22 @@ extension CHSeries {
         let bar = CHChartModel.getBar(upColor: upColor, downColor: downColor, titleColor: barc, title: "BAR", key: "MACD_BAR")
         bar.section = section
         series.chartModels = [bar, dif, dea]
+        return series
+    }
+    
+    /**
+     返回一个BOLL系列样式
+     */
+    public class func getBOLL(_ mb: UIColor, up: UIColor, dn: UIColor, section: CHSection) -> CHSeries {
+        let series = CHSeries()
+        series.key = CHSeriesKey.boll
+        let mb = CHChartModel.getLine(mb, title: "mb", key: "BOLL_mb")
+        mb.section = section
+        let up = CHChartModel.getLine(up, title: "up", key: "BOLL_up")
+        up.section = section
+        let dn = CHChartModel.getLine(dn, title: "dn", key: "BOLL_dn")
+        dn.section = section
+        series.chartModels = [mb, up, dn]
         return series
     }
 }

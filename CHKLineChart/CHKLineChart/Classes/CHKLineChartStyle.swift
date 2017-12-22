@@ -130,6 +130,7 @@ public extension CHKLineChartStyle {
             CHChartAlgorithm.ema(30),
             CHChartAlgorithm.macd(12, 26, 9),
             CHChartAlgorithm.kdj(9, 3, 3),
+            CHChartAlgorithm.boll(9, 3, 3),
         ]
         
         //分区点线样式
@@ -240,9 +241,20 @@ public extension CHKLineChartStyle {
             section: trendSection)
         macdSeries.title = "MACD(12,26,9)"
         macdSeries.symmetrical = true
+        
+        let bollSeries = CHSeries.getBOLL(
+            UIColor.ch_hex(0xDDDDDD),
+            up: UIColor.ch_hex(0xF9EE30),
+            dn: UIColor.ch_hex(0xF600FF),
+            section: trendSection)
+    
+        bollSeries.title = "BOLL(12,26,9)"
+        bollSeries.symmetrical = true
+
         trendSection.series = [
             kdjSeries,
-            macdSeries]
+            macdSeries,
+            bollSeries]
         
         style.sections = [priceSection, volumeSection, trendSection]
         

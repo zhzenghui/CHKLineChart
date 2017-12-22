@@ -284,9 +284,20 @@ extension StyleSettingViewController {
                                               section: trendSection)
             macdSeries.title = "MACD(12,26,9)"
             macdSeries.symmetrical = true
+            let bollSeries = CHSeries.getBOLL(UIColor.ch_hex(0xDDDDDD),
+                                              up: UIColor.ch_hex(0xF9EE30),
+                                              dn: UIColor.ch_hex(0xF600FF),
+                                              section: trendSection)
+            
+            bollSeries.title = "CD(12,26,9)"
+            bollSeries.symmetrical = true
+
+            
             trendSection.series = [
                 kdjSeries,
-                macdSeries]
+                macdSeries,
+                bollSeries,
+            ]
             
             trendSection.titleColor = UIColor(white: 0.8, alpha: 1)
             
@@ -305,9 +316,20 @@ extension StyleSettingViewController {
                                               section: trendSection)
             macdSeries.title = "MACD(12,26,9)"
             macdSeries.symmetrical = true
+            let bollSeries = CHSeries.getBOLL(UIColor.ch_hex(0xDDDDDD),
+                                              up: UIColor.ch_hex(0xF9EE30),
+                                              dn: UIColor.ch_hex(0xF600FF),
+                                              section: trendSection)
+            
+            bollSeries.title = "CD(12,26,9)"
+            bollSeries.symmetrical = true
+            
+            
             trendSection.series = [
                 kdjSeries,
-                macdSeries]
+                macdSeries,
+                bollSeries,
+            ]
             
             trendSection.titleColor = UIColor(white: 0.5, alpha: 1)
         }

@@ -74,7 +74,11 @@ class ChartCustomDesignViewController: UIViewController {
         // 快捷方式获得session对象
         let session = URLSession.shared
         
-        let url = URL(string: "https://www.btc123.com/kline/klineapi?symbol=chbtc\(self.selectexPair)&type=\(self.selectTime)&size=\(size)")
+        let urlStr = "https://www.okex.com/api/v1/kline.do?symbol=btc_usdt&type=1min&size=200"
+
+//        let url = URL(string: "https://www.btc123.com/kline/klineapi?symbol=chbtc\(self.selectexPair)&type=\(self.selectTime)&size=\(size)")
+        let url = URL(string: urlStr)
+
         // 通过URL初始化task,在block内部可以直接对返回的数据进行处理
         let task = session.dataTask(with: url!, completionHandler: {
             (data, response, error) in
@@ -86,18 +90,19 @@ class ChartCustomDesignViewController: UIViewController {
                      */
                     do {
                         //                        NSLog("\(NSString(data: data, encoding: String.Encoding.utf8.rawValue))")
-                        let dict = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableLeaves) as! [String: AnyObject]
+                        let dict = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableLeaves) as! [AnyObject]
                         
-                        let isSuc = dict["isSuc"] as? Bool ?? false
-                        if isSuc {
-                            let datas = dict["datas"] as! [AnyObject]
-                            NSLog("chart.datas = \(datas.count)")
+                        
+                        let datas = dict as [AnyObject]
+                        NSLog("chart.datas = \(datas.count)")
+                        if self.klineDatas.count  == 0 {
                             self.klineDatas = datas
-                            
-                            self.chartView.reloadData(toPosition: .end)
-                            
-                            
                         }
+                        else {
+                            self.klineDatas += datas
+                        }
+                        self.chartView.reloadData(toPosition: .end)
+
                         
                     } catch _ {
                         
@@ -178,14 +183,14 @@ extension ChartCustomDesignViewController: CHKLineChartDelegate {
     }
     
     func kLineChart(chart: CHKLineChartView, valueForPointAtIndex index: Int) -> CHChartItem {
-        let data = self.klineDatas[index] as! [Double]
+        let data = self.klineDatas[index] as! [AnyObject]
         let item = CHChartItem()
-        item.time = Int(data[0] / 1000)
-        item.openPrice = CGFloat(data[1])
-        item.highPrice = CGFloat(data[2])
-        item.lowPrice = CGFloat(data[3])
-        item.closePrice = CGFloat(data[4])
-        item.vol = CGFloat(data[5])
+        item.time = Int(data[0] as! Double)
+        item.openPrice =  CGFloat((data[1] as! NSString).floatValue)
+        item.highPrice = CGFloat((data[2] as! NSString).floatValue)
+        item.lowPrice = CGFloat((data[3] as! NSString).floatValue)
+        item.closePrice = CGFloat((data[4] as! NSString).floatValue)
+        item.vol = CGFloat((data[5] as! NSString).floatValue)
         return item
     }
     
@@ -200,8 +205,8 @@ extension ChartCustomDesignViewController: CHKLineChartDelegate {
     }
     
     func kLineChart(chart: CHKLineChartView, labelOnXAxisForIndex index: Int) -> String {
-        let data = self.klineDatas[index] as! [Double]
-        let timestamp = Int(data[0])
+        let data = self.klineDatas[index] as! [AnyObject]
+        let timestamp =  Int(data[0] as! Double) / 1000
         var time = Date.ch_getTimeByStamp(timestamp, format: "HH:mm")
         if time == "00:00" {
             time = Date.ch_getTimeByStamp(timestamp, format: "MM-dd")
