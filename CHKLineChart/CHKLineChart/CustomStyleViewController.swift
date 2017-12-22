@@ -14,19 +14,25 @@ class CustomStyleViewController: UIViewController {
     
     var style: CHKLineChartStyle = .base
     
-    var klineDatas = [AnyObject]()
+    var klineDatas = [CHChartItem]()
     
     var settingVC: StyleSettingViewController!
     
+    var loopCount = 0
+    var timer : Timer?
     override func viewDidLoad() {
         super.viewDidLoad()
         self.chartView.delegate = self
         self.chartView.style = self.style
-        self.getDataByFile()        //读取文件
-        
+//        self.getDataByFile()        //读取文件
+        self.getRemoteServiceData()
         
         settingVC = self.storyboard?.instantiateViewController(withIdentifier: "StyleSettingViewController") as! StyleSettingViewController
         settingVC.chartView = self.chartView
+        
+//        timer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(getRemoteServiceData), userInfo: nil, repeats: true)
+
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -34,8 +40,86 @@ class CustomStyleViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    func getRemoteServiceData() {
+        // 快捷方式获得session对象
+        
+        if loopCount == 2 {
+            timer? .invalidate()
+        }
+        loopCount = loopCount + 1
+        let session = URLSession.shared
+        //
+        let urlStr = "https://api.huobi.pro/market/history/kline?symbol=btcusdt&period=15min&size=500"
+        
+        //        let url = URL(string: "https://www.btc123.com/kline/klineapi?symbol=chbtc\(self.selectexPair)&type=\(self.selectTime)&size=\(size)")
+        
+        let url = URL(string: urlStr)
+        // 通过URL初始化task,在block内部可以直接对返回的数据进行处理
+        let task = session.dataTask(with: url!, completionHandler: {
+            (data, response, error) in
+            if let data = data {
+                
+                DispatchQueue.main.async {
+                    /*
+                     对从服务器获取到的数据data进行相应的处理.
+                     */
+                    do {
+                        let dict = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableLeaves) as! Dictionary<String, AnyObject>
+                        
+                        var dataArray = [CHChartItem]()
+                        if dict["status"] as! String == "ok" {
+                            let arr = dict["data"] as! Array<NSDictionary>
+                            for data in arr{
+                                let item = CHChartItem()
+                                item.time = Int((data["id"] as! Double) )
+                                item.openPrice = CGFloat(data["open"] as! Double)
+                                item.highPrice = CGFloat(data["high"] as! Double)
+                                item.lowPrice = CGFloat(data["low"] as! Double)
+                                item.closePrice = CGFloat(data["close"] as! Double)
+                                item.vol = CGFloat(data["vol"] as! Double)
+                                
+                                dataArray.append(item)
+
+                            }
+                        }
+                        
+                        
+//                        let datas = dict as [CHChartItem]
+//                        NSLog("chart.datas = \(datas.count)")
+//                        self.klineDatas = datas
+                        
+                        dataArray.reverse()
+
+                        
+                        NSLog("chart.datas = \(dataArray.count)")
+
+                        if self.klineDatas.count  == 0 {
+                            self.klineDatas = dataArray
+                            self.chartView.reloadData(toPosition: .end)
+
+                        }
+                        else {
+                            self.klineDatas += dataArray
+                            self.chartView.reloadData(toPosition: .none)
+
+                        }
+                    } catch _ {
+                        
+                    }
+                }
+                
+                
+            }
+        })
+        
+        // 启动任务
+        task.resume()
+    }
+
 
     func getDataByFile() {
+        
+        //                        火币
         let data = try? Data(contentsOf: URL(fileURLWithPath: Bundle.main.path(forResource: "data", ofType: "json")!))
         let dict = try! JSONSerialization.jsonObject(with: data!, options: JSONSerialization.ReadingOptions.mutableLeaves) as! [String: AnyObject]
         
@@ -43,7 +127,7 @@ class CustomStyleViewController: UIViewController {
         if isSuc {
             let datas = dict["datas"] as! [AnyObject]
             NSLog("chart.datas = \(datas.count)")
-            self.klineDatas = datas
+//            self.klineDatas = datas
             self.chartView.reloadData()
         }
     }
@@ -66,30 +150,25 @@ extension CustomStyleViewController: CHKLineChartDelegate {
     }
     
     func kLineChart(chart: CHKLineChartView, valueForPointAtIndex index: Int) -> CHChartItem {
-        let data = self.klineDatas[index] as! [Double]
-        let item = CHChartItem()
-        item.time = Int(data[0] / 1000)
-        item.openPrice = CGFloat(data[1])
-        item.highPrice = CGFloat(data[2])
-        item.lowPrice = CGFloat(data[3])
-        item.closePrice = CGFloat(data[4])
-        item.vol = CGFloat(data[5])
+        let item = self.klineDatas[index]
+
         return item
     }
     
     func kLineChart(chart: CHKLineChartView, labelOnYAxisForValue value: CGFloat, section: CHSection) -> String {
         var strValue = ""
         if value / 10000 > 1 {
-            strValue = (value / 10000).ch_toString(maxF: section.decimal) + "万"
+            strValue = (value / 10000).ch_toString(maxF: 2) + "万"
         } else {
-            strValue = value.ch_toString(maxF: section.decimal)
+            strValue = value.ch_toString(maxF: 2)
         }
         return strValue
     }
     
     func kLineChart(chart: CHKLineChartView, labelOnXAxisForIndex index: Int) -> String {
-        let data = self.klineDatas[index] as! [Double]
-        let timestamp = Int(data[0])
+        let data = self.klineDatas[index]
+        
+        let timestamp = data.time
         return Date.ch_getTimeByStamp(timestamp, format: "HH:mm")
     }
     
@@ -114,5 +193,16 @@ extension CustomStyleViewController: CHKLineChartDelegate {
         return chart.kYAxisLabelWidth
     }
     
+    
+    /// 点击图标返回点击的位置和数据对象
+    ///
+    /// - Parameters:
+    ///   - chart:
+    ///   - index:
+    ///   - item:
+    func kLineChart(chart: CHKLineChartView, didSelectAt index: Int, item: CHChartItem) {
+        NSLog("selected index = \(index)")
+        NSLog("selected item closePrice = \(item.closePrice)")
+    }
 }
 

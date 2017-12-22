@@ -20,7 +20,7 @@ class ChartDemoViewController: UIViewController {
     var klineDatas = [AnyObject]()
     
     let times: [String] = ["1min", "15min", "1day", "1min"] //选择时间，最后一个时分
-    let exPairs: [String] = ["btccny", "ethbtc"] //选择交易对
+    let exPairs: [String] = ["btcusdt", "ethbtc"] //选择交易对
     var selectTime: String = ""
     var selectexPair: String = ""
     
@@ -30,8 +30,8 @@ class ChartDemoViewController: UIViewController {
         self.chartView.style = .base
         //使用代码创建K线图表
         //self.createChartView()
-
-//        self.getDataByFile()        //读取文件
+        
+        //        self.getDataByFile()        //读取文件
         self.selectTime = self.times[0]
         self.selectexPair = self.exPairs[0]
         self.getRemoteServiceData(size: "1000")       //读取网络
@@ -75,7 +75,14 @@ class ChartDemoViewController: UIViewController {
         // 快捷方式获得session对象
         let session = URLSession.shared
         
-        let url = URL(string: "https://www.btc123.com/kline/klineapi?symbol=chbtc\(self.selectexPair)&type=\(self.selectTime)&size=\(size)")
+        // okex
+        let urlStr = "https://www.okex.com/api/v1/kline.do?symbol=btc_usdt&type=1min&size=200"
+        //
+        //        let urlStr = "https://api.huobi.pro/market/history/kline?symbol=btcusdt&period=15min&size=200"
+        
+        //        let url = URL(string: "https://www.btc123.com/kline/klineapi?symbol=chbtc\(self.selectexPair)&type=\(self.selectTime)&size=\(size)")
+        
+        let url = URL(string: urlStr)
         // 通过URL初始化task,在block内部可以直接对返回的数据进行处理
         let task = session.dataTask(with: url!, completionHandler: {
             (data, response, error) in
@@ -86,19 +93,23 @@ class ChartDemoViewController: UIViewController {
                      对从服务器获取到的数据data进行相应的处理.
                      */
                     do {
-//                        NSLog("\(NSString(data: data, encoding: String.Encoding.utf8.rawValue))")
-                        let dict = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableLeaves) as! [String: AnyObject]
+                        let dict = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableLeaves) as! [[AnyObject]]
                         
-                        let isSuc = dict["isSuc"] as? Bool ?? false
-                        if isSuc {
-                            let datas = dict["datas"] as! [AnyObject]
-                            NSLog("chart.datas = \(datas.count)")
+                        
+                        
+                        let datas = dict as [AnyObject]
+                        NSLog("chart.datas = \(datas.count)")
+                        if self.klineDatas.count  == 0 {
                             self.klineDatas = datas
-                            
-                            self.chartView.reloadData(toPosition: .end)
-                            
-                            
                         }
+                        else {
+                            self.klineDatas += datas
+                        }
+                        
+                        
+                        self.chartView.reloadData(toPosition: .end)
+                        
+                        
                         
                     } catch _ {
                         
@@ -152,16 +163,21 @@ class ChartDemoViewController: UIViewController {
             switch sender.selectedSegmentIndex {
             case 0:
                 self.chartView.setSection(hidden: true, by: CHSectionValueType.analysis.key)
-                self.chartView.setSerie(hidden: true, by: CHSeriesKey.kdj)
+                self.chartView.setSerie(hidden: true, by: CHSeriesKey.boll)
                 self.chartView.setSerie(hidden: true, by: CHSeriesKey.macd)
             case 1:
                 self.chartView.setSection(hidden: false, by: CHSectionValueType.analysis.key)
-                self.chartView.setSerie(hidden: false, by: CHSeriesKey.kdj)
+                self.chartView.setSerie(hidden: false, by: CHSeriesKey.boll)
                 self.chartView.setSerie(hidden: true, by: CHSeriesKey.macd)
             case 2:
                 self.chartView.setSection(hidden: false, by: CHSectionValueType.analysis.key)
-                self.chartView.setSerie(hidden: true, by: CHSeriesKey.kdj)
+                self.chartView.setSerie(hidden: true, by: CHSeriesKey.boll)
                 self.chartView.setSerie(hidden: false, by: CHSeriesKey.macd)
+            case 3:
+                self.chartView.setSection(hidden: false, by: CHSectionValueType.analysis.key)
+                self.chartView.setSerie(hidden: true, by: CHSeriesKey.kdj)
+                self.chartView.setSerie(hidden: false, by: CHSeriesKey.boll)
+
             default:
                 break
             }
@@ -217,14 +233,15 @@ extension ChartDemoViewController: CHKLineChartDelegate {
     }
     
     func kLineChart(chart: CHKLineChartView, valueForPointAtIndex index: Int) -> CHChartItem {
-        let data = self.klineDatas[index] as! [Double]
+        let data = self.klineDatas[index] as! [AnyObject]
         let item = CHChartItem()
-        item.time = Int(data[0] / 1000)
-        item.openPrice = CGFloat(data[1])
-        item.highPrice = CGFloat(data[2])
-        item.lowPrice = CGFloat(data[3])
-        item.closePrice = CGFloat(data[4])
-        item.vol = CGFloat(data[5])
+        
+        item.time = Int(data[0] as! Double)
+        item.openPrice =  CGFloat((data[1] as! NSString).floatValue)
+        item.highPrice = CGFloat((data[2] as! NSString).floatValue)
+        item.lowPrice = CGFloat((data[3] as! NSString).floatValue)
+        item.closePrice = CGFloat((data[4] as! NSString).floatValue)
+        item.vol = CGFloat((data[5] as! NSString).floatValue)
         return item
     }
     
@@ -239,8 +256,8 @@ extension ChartDemoViewController: CHKLineChartDelegate {
     }
     
     func kLineChart(chart: CHKLineChartView, labelOnXAxisForIndex index: Int) -> String {
-        let data = self.klineDatas[index] as! [Double]
-        let timestamp = Int(data[0])
+        let data = self.klineDatas[index] as! [AnyObject]
+        let timestamp =  Int(data[0] as! Double) / 1000
         return Date.ch_getTimeByStamp(timestamp, format: "HH:mm")
     }
     
@@ -283,7 +300,7 @@ extension ChartDemoViewController: CHKLineChartDelegate {
     /// - Parameters:
     ///   - chart:
     ///   - index:
-    ///   - item: 
+    ///   - item:
     func kLineChart(chart: CHKLineChartView, didSelectAt index: Int, item: CHChartItem) {
         NSLog("selected index = \(index)")
         NSLog("selected item closePrice = \(item.closePrice)")
@@ -309,3 +326,4 @@ extension ChartDemoViewController {
     }
     
 }
+

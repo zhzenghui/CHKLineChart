@@ -21,8 +21,17 @@ class DemoSelectViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        
+        let story = UIStoryboard.init(name: "Main", bundle: nil)
+        let name = "ChartDemoViewController"
+        let vc = story.instantiateViewController(withIdentifier: name)
+        self.present(vc, animated: true, completion: nil)
+
+    }
 }
 
 extension DemoSelectViewController: UITableViewDelegate, UITableViewDataSource {
