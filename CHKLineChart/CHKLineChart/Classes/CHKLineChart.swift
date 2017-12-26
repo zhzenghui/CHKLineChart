@@ -910,8 +910,19 @@ extension CHKLineChartView {
         var yVal = yaxis.baseValue + CGFloat(i) * step
         while yVal <= yaxis.max && i <= yaxis.tickInterval {
             //画虚线和Y标签值
-            let v1 = Int(yVal / 100) * 100
-            yVal = CGFloat(v1)
+
+            switch section.valueType {
+            case .price:
+                print("--yaxis price-----")
+                let v1 = Int(yVal / 100) * 100
+                yVal = CGFloat(v1)                
+            case .volume:
+                print("--volume-----")
+            case .analysis:
+                print("--analysis-----")
+                
+            }
+
             
             let iy = section.getLocalY(yVal)
             print( "getLocalY: \(iy), yval: \(yVal)" )
@@ -957,9 +968,18 @@ extension CHKLineChartView {
         i = 0
         yVal = yaxis.baseValue - CGFloat(i) * step
         while yVal >= yaxis.min && i <= yaxis.tickInterval {
-            let v1 = Int(yVal / 100) * 100
-            yVal = CGFloat(v1)
             
+            switch section.valueType {
+            case .price:
+                print("--price-----")
+                let v1 = Int(yVal / 100) * 100
+                yVal = CGFloat(v1)
+            case .volume:
+                print("--volume-----")
+            case .analysis:
+                print("--analysis-----")
+                
+            }
             //画虚线和Y标签值
             let iy = section.getLocalY(yVal)
             if showYAxisLabel {

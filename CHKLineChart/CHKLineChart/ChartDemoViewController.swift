@@ -76,7 +76,7 @@ class ChartDemoViewController: UIViewController {
         let session = URLSession.shared
         
         // okex
-        let urlStr = "https://www.okex.com/api/v1/kline.do?symbol=btc_usdt&type=1min&size=200"
+        let urlStr = "https://www.okex.com/api/v1/kline.do?symbol=btc_usdt&type=15min&size=200"
         //
         //        let urlStr = "https://api.huobi.pro/market/history/kline?symbol=btcusdt&period=15min&size=200"
         
@@ -176,6 +176,7 @@ class ChartDemoViewController: UIViewController {
             case 3:
                 self.chartView.setSection(hidden: false, by: CHSectionValueType.analysis.key)
                 self.chartView.setSerie(hidden: true, by: CHSeriesKey.kdj)
+                self.chartView.setSerie(hidden: true, by: CHSeriesKey.macd)
                 self.chartView.setSerie(hidden: false, by: CHSeriesKey.boll)
 
             default:
@@ -247,10 +248,22 @@ extension ChartDemoViewController: CHKLineChartDelegate {
     
     func kLineChart(chart: CHKLineChartView, labelOnYAxisForValue value: CGFloat, section: CHSection) -> String {
         var strValue = ""
-        if value / 10000 > 1 {
-            strValue = (value / 10000).ch_toString(maxF: section.decimal) + "万"
-        } else {
-            strValue = value.ch_toString(maxF: section.decimal)
+//        if value / 10000 > 1 {
+//            strValue = (value / 10000).ch_toString(maxF: section.decimal) + "万"
+//        } else {
+//        }
+        switch section.valueType {
+        case .price:
+            print("--price-----")
+            let v1 = Int(value / 100) * 100
+            let v2 = CGFloat(v1)
+            strValue = v2.ch_toString(maxF: 0)
+        case .volume:
+            print("--volume-----")
+            strValue = value.ch_toString(maxF: 2)
+        case .analysis:
+            print("--analysis-----")
+            strValue = value.ch_toString(maxF: 2)
         }
         return strValue
     }

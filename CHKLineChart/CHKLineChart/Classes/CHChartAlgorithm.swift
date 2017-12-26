@@ -341,7 +341,7 @@ extension CHChartAlgorithm {
     
 }
 
-// MARK: - 《MACD平滑异同移动平均线》 处理算法
+// MARK: - BOLL 处理算法
 extension CHChartAlgorithm {
     /**
      处理KDJ运算
