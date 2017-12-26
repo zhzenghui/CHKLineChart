@@ -783,6 +783,7 @@ extension CHKLineChartView {
         
         if section.series.count > 0 {
             //建立分区每条线的坐标系
+            
             section.buildYAxis(startIndex: self.rangeFrom, endIndex: self.rangeTo, datas: self.datas)
         }
         
@@ -845,6 +846,62 @@ extension CHKLineChartView {
             yaxis.tickInterval += 1
         }
         
+        switch section.valueType {
+        case .price:
+            print("--price-----")
+            //            13858.92
+            //            13562.71
+            //            1. 最大减最小，获得差值
+            //            2. 分辨位数
+            //            3. 获得跨度值
+            let range = yaxis.max - yaxis.min
+            var tempMin = 0
+            var tempMax = 0
+            let step    = 5
+            let graduation =  Int(range) / step // 分段，每段的值
+            var remainder =  0               // 跨度
+
+            if range > 1000 {
+//                remainder = 1000
+
+//
+//                if graduation % graduation != 0 {
+//
+//                }
+                if graduation % 100 == 0{
+                    remainder = (graduation / 100) * 100
+                }
+                else {
+                    remainder = (graduation / 100) * 100 + 100
+                }
+                tempMin = (Int(yaxis.min / 1000) * 1000)
+                tempMax = (Int(yaxis.max / 1000) * 1000)
+            }
+            else if range > 100 {
+                tempMin = (Int(yaxis.min / 100) * 100)
+                tempMax = (Int(yaxis.max / 100) * 100)            }
+            else if range > 10 {
+                tempMin = (Int(yaxis.min / 10) * 10)
+                tempMax = (Int(yaxis.max / 10) * 10)
+            }
+            
+            
+            
+            let min = tempMin + remainder
+            let max = tempMax - remainder
+//            yaxis.min = CGFloat(min)
+//            yaxis.max = CGFloat(max)
+            print("change min: \(tempMin)")
+            print("change max: \(tempMax)")
+            
+            
+        case .volume:
+            print("--volume-----")
+        case .analysis:
+            print("--analysis-----")
+            
+        }
+
         //计算y轴的标签及虚线分几段
         let step = (yaxis.max - yaxis.min) / CGFloat(yaxis.tickInterval)
         
@@ -853,7 +910,11 @@ extension CHKLineChartView {
         var yVal = yaxis.baseValue + CGFloat(i) * step
         while yVal <= yaxis.max && i <= yaxis.tickInterval {
             //画虚线和Y标签值
+            let v1 = Int(yVal / 100) * 100
+            yVal = CGFloat(v1)
+            
             let iy = section.getLocalY(yVal)
+            print( "getLocalY: \(iy), yval: \(yVal)" )
             if showYAxisLabel {
                 //突出的线段
                 context?.setShouldAntialias(false)
@@ -896,6 +957,9 @@ extension CHKLineChartView {
         i = 0
         yVal = yaxis.baseValue - CGFloat(i) * step
         while yVal >= yaxis.min && i <= yaxis.tickInterval {
+            let v1 = Int(yVal / 100) * 100
+            yVal = CGFloat(v1)
+            
             //画虚线和Y标签值
             let iy = section.getLocalY(yVal)
             if showYAxisLabel {
