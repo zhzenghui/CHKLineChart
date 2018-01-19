@@ -117,16 +117,12 @@ public enum CHChartViewScrollPosition {
 open class CHKLineChartView: UIView {
     
     /// MARK: - 常量
-    fileprivate static let kMinRange = 13       //最小缩放范围
-    fileprivate static let kMaxRange = 133     //最大缩放范围
-    fileprivate static let kPerInterval = 4    //缩放的每段间隔
+    let kMinRange = 13       //最小缩放范围
+    let kMaxRange = 133     //最大缩放范围
+    let kPerInterval = 4    //缩放的每段间隔
     open let kYAxisLabelWidth: CGFloat = 46        //默认宽度
-	open let kXAxisHegiht: CGFloat = 16        //默认X坐标的高度
-	
-	open var scaleRangeMin: Int = CHKLineChartView.kMinRange
-	open var scaleRangeMax: Int = CHKLineChartView.kMaxRange
-	open var pinchPerInterval: Int = CHKLineChartView.kPerInterval
-	
+    open let kXAxisHegiht: CGFloat = 16        //默认X坐标的高度
+    
     /// MARK: - 成员变量
     @IBInspectable open var upColor: UIColor = UIColor.green     //升的颜色
     @IBInspectable open var downColor: UIColor = UIColor.red     //跌的颜色
@@ -173,9 +169,6 @@ open class CHKLineChartView: UIView {
     /// 把X坐标内容显示到哪个索引分区上，默认为-1，表示最后一个，如果用户设置溢出的数值，也以最后一个
     open var showXAxisOnSection: Int = -1
     
-    /// 是否显示所有内容
-    open var isShowAll: Bool = false
-    
     var borderWidth: CGFloat = 0.5
     var lineWidth: CGFloat = 0.5
     var plotCount: Int = 0
@@ -214,7 +207,6 @@ open class CHKLineChartView: UIView {
             self.enablePan = self.style.enablePan
             self.showSelection = self.style.showSelection
             self.showXAxisOnSection = self.style.showXAxisOnSection
-            self.isShowAll = self.style.isShowAll
         }
         
     }
@@ -279,26 +271,19 @@ open class CHKLineChartView: UIView {
         self.addSubview(self.selectedXAxisLabel!)
         
         //添加手势操作
-        let pan = UIPanGestureRecognizer(
+        self.addGestureRecognizer(UIPanGestureRecognizer(
             target: self,
-            action: #selector(doPanAciton(_:)))
-        pan.delegate = self
-        
-        self.addGestureRecognizer(pan)
+            action: #selector(doPanAciton(_:))))
         
         //点击手势操作
-        let tap = UITapGestureRecognizer(target: self,
-                                         action: #selector(doTapAction(_:)))
-        tap.delegate = self
-        self.addGestureRecognizer(tap)
+        self.addGestureRecognizer(UITapGestureRecognizer(target: self,
+            action: #selector(doTapAction(_:))))
         
         
         //双指缩放操作
-        let pinch = UIPinchGestureRecognizer(
+        self.addGestureRecognizer(UIPinchGestureRecognizer(
             target: self,
-            action: #selector(doPinchAction(_:)))
-        pinch.delegate = self
-        self.addGestureRecognizer(pinch)
+            action: #selector(doPinchAction(_:))))
         
         //初始数据
         self.resetData()
@@ -543,11 +528,6 @@ extension CHKLineChartView {
         
         if plotCount > 0 {
             
-            //如果显示全部，显示范围为全部数据量
-            if self.isShowAll {
-                self.range = self.plotCount
-            }
-            
             //图表刷新滚动为默认时，如果第一次初始化，就默认滚动到最后显示
             if self.scrollToPosition == .none {
                 //如果图表尽头的索引为0，则进行初始化
@@ -748,7 +728,6 @@ extension CHKLineChartView {
      */
     fileprivate func drawSection(_ section: CHSection) {
         
-        
         let context = UIGraphicsGetCurrentContext()
         context?.setShouldAntialias(false)
         context?.setLineWidth(self.lineWidth)
@@ -783,7 +762,6 @@ extension CHKLineChartView {
         
         if section.series.count > 0 {
             //建立分区每条线的坐标系
-            
             section.buildYAxis(startIndex: self.rangeFrom, endIndex: self.rangeTo, datas: self.datas)
         }
         
@@ -846,62 +824,6 @@ extension CHKLineChartView {
             yaxis.tickInterval += 1
         }
         
-        switch section.valueType {
-        case .price:
-            print("--price-----")
-            //            13858.92
-            //            13562.71
-            //            1. 最大减最小，获得差值
-            //            2. 分辨位数
-            //            3. 获得跨度值
-            let range = yaxis.max - yaxis.min
-            var tempMin = 0
-            var tempMax = 0
-            let step    = 5
-            let graduation =  Int(range) / step // 分段，每段的值
-            var remainder =  0               // 跨度
-
-            if range > 1000 {
-//                remainder = 1000
-
-//
-//                if graduation % graduation != 0 {
-//
-//                }
-                if graduation % 100 == 0{
-                    remainder = (graduation / 100) * 100
-                }
-                else {
-                    remainder = (graduation / 100) * 100 + 100
-                }
-                tempMin = (Int(yaxis.min / 1000) * 1000)
-                tempMax = (Int(yaxis.max / 1000) * 1000)
-            }
-            else if range > 100 {
-                tempMin = (Int(yaxis.min / 100) * 100)
-                tempMax = (Int(yaxis.max / 100) * 100)            }
-            else if range > 10 {
-                tempMin = (Int(yaxis.min / 10) * 10)
-                tempMax = (Int(yaxis.max / 10) * 10)
-            }
-            
-            
-            
-            let min = tempMin + remainder
-            let max = tempMax - remainder
-//            yaxis.min = CGFloat(min)
-//            yaxis.max = CGFloat(max)
-            print("change min: \(tempMin)")
-            print("change max: \(tempMax)")
-            
-            
-        case .volume:
-            print("--volume-----")
-        case .analysis:
-            print("--analysis-----")
-            
-        }
-
         //计算y轴的标签及虚线分几段
         let step = (yaxis.max - yaxis.min) / CGFloat(yaxis.tickInterval)
         
@@ -910,22 +832,7 @@ extension CHKLineChartView {
         var yVal = yaxis.baseValue + CGFloat(i) * step
         while yVal <= yaxis.max && i <= yaxis.tickInterval {
             //画虚线和Y标签值
-
-            switch section.valueType {
-            case .price:
-                print("--yaxis price-----")
-                let v1 = Int(yVal / 100) * 100
-                yVal = CGFloat(v1)                
-            case .volume:
-                print("--volume-----")
-            case .analysis:
-                print("--analysis-----")
-                
-            }
-
-            
             let iy = section.getLocalY(yVal)
-            print( "getLocalY: \(iy), yval: \(yVal)" )
             if showYAxisLabel {
                 //突出的线段
                 context?.setShouldAntialias(false)
@@ -968,28 +875,18 @@ extension CHKLineChartView {
         i = 0
         yVal = yaxis.baseValue - CGFloat(i) * step
         while yVal >= yaxis.min && i <= yaxis.tickInterval {
-            
-            switch section.valueType {
-            case .price:
-                print("--price-----")
-                let v1 = Int(yVal / 100) * 100
-                yVal = CGFloat(v1)
-            case .volume:
-                print("--volume-----")
-            case .analysis:
-                print("--analysis-----")
-                
-            }
             //画虚线和Y标签值
             let iy = section.getLocalY(yVal)
             if showYAxisLabel {
                 //突出的线段
                 context?.setShouldAntialias(false)
                 context?.setStrokeColor(self.dashColor.cgColor)
-                context?.move(to: CGPoint(x: extrude, y: iy))
-                context?.addLine(to: CGPoint(x: extrude + 2, y: iy))
+                context?.move(to: CGPoint(x: section.frame.origin.x + section.padding.left + section.frame.size.width - section.padding.right, y: iy))
+                context?.addLine(to: CGPoint(x: section.frame.origin.x + section.padding.left + section.frame.size.width - section.padding.right + 2, y: iy))
                 context?.strokePath()
                 
+                //把Y轴标签文字画上去
+                context?.setShouldAntialias(true)  //抗锯齿开启，解决字体发虚
                 
                 let strValue = self.delegate?.kLineChart(chart: self, labelOnYAxisForValue: yVal, section: section) ?? ""
                 
@@ -1030,11 +927,6 @@ extension CHKLineChartView {
     /// - Parameter yAxisToDraw:
     fileprivate func drawYAxisLabel(_ yAxisToDraw: [(CGRect, String)]) {
         
-        let context = UIGraphicsGetCurrentContext()
-        
-        //把Y轴标签文字画上去
-        context?.setShouldAntialias(true)  //抗锯齿开启，解决字体发虚
-        
         let paragraphStyle = NSMutableParagraphStyle()
         
         //分区中各个y轴虚线和y轴的label
@@ -1073,7 +965,6 @@ extension CHKLineChartView {
         } else {
             //不分页显示，全部系列绘制到图表上
             for serie in section.series {
-                
                 self.drawSerie(serie)
             }
         }
@@ -1163,20 +1054,7 @@ extension CHKLineChartView {
 
 
 // MARK: - 手势操作
-extension CHKLineChartView: UIGestureRecognizerDelegate {
-    
-    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        switch gestureRecognizer {
-        case is UITapGestureRecognizer:
-            return self.enableTap
-        case is UIPanGestureRecognizer:
-            return self.enablePan
-        case is UIPinchGestureRecognizer:
-            return self.enablePinch
-        default:
-            return false
-        }
-    }
+extension CHKLineChartView {
     
     /**
      *  拖动操作
@@ -1280,7 +1158,7 @@ extension CHKLineChartView: UIGestureRecognizerDelegate {
         }
         
         //双指合拢或张开
-        let interval = pinchPerInterval / 2
+        let interval = self.kPerInterval / 2
         let scale = sender.scale
         let velocity = sender.velocity
         
@@ -1293,7 +1171,7 @@ extension CHKLineChartView: UIGestureRecognizerDelegate {
                 newRangeTo = self.rangeTo - interval
                 newRangeFrom = self.rangeFrom + interval
                 newRange = self.rangeTo - self.rangeFrom
-                if newRange >= scaleRangeMin {
+                if newRange >= kMinRange {
                     
                     if self.plotCount > self.rangeTo - self.rangeFrom {
                         if newRangeFrom < self.rangeTo {
@@ -1316,7 +1194,7 @@ extension CHKLineChartView: UIGestureRecognizerDelegate {
                 newRangeTo = self.rangeTo + interval
                 newRangeFrom = self.rangeFrom - interval
                 newRange = self.rangeTo - self.rangeFrom
-                if newRange <= scaleRangeMax {
+                if newRange <= kMaxRange {
                     
                     if newRangeFrom >= 0 {
                         self.rangeFrom = newRangeFrom

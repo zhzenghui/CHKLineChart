@@ -93,9 +93,6 @@ open class CHKLineChartStyle {
     /// 把X坐标内容显示到哪个索引分区上，默认为-1，表示最后一个，如果用户设置溢出的数值，也以最后一个
     open var showXAxisOnSection: Int = -1
     
-    /// 是否显示所有内容
-    open var isShowAll: Bool = false
-    
     public init() {
         
     }
@@ -130,7 +127,6 @@ public extension CHKLineChartStyle {
             CHChartAlgorithm.ema(30),
             CHChartAlgorithm.macd(12, 26, 9),
             CHChartAlgorithm.kdj(9, 3, 3),
-            CHChartAlgorithm.boll(9, 3, 3),
         ]
         
         //分区点线样式
@@ -241,20 +237,9 @@ public extension CHKLineChartStyle {
             section: trendSection)
         macdSeries.title = "MACD(12,26,9)"
         macdSeries.symmetrical = true
-        
-        let bollSeries = CHSeries.getBOLL(
-            UIColor.ch_hex(0xDDDDDD),
-            up: UIColor.ch_hex(0xF9EE30),
-            dn: UIColor.ch_hex(0xF600FF),
-            section: trendSection)
-    
-        bollSeries.title = "BOLL(12,26,9)"
-        bollSeries.symmetrical = true
-
         trendSection.series = [
             kdjSeries,
-            macdSeries,
-            bollSeries]
+            macdSeries]
         
         style.sections = [priceSection, volumeSection, trendSection]
         

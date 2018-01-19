@@ -134,8 +134,6 @@ open class CHSection: NSObject {
                 }
             }
         }
-        
-
     }
     
     /**

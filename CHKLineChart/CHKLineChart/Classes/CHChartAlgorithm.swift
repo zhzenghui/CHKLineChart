@@ -32,8 +32,7 @@ public enum CHChartAlgorithm: CHChartAlgorithmProtocol {
     case ema(Int)                               //指数移动平均数
     case kdj(Int, Int, Int)                     //随机指标
     case macd(Int, Int, Int)                    //指数平滑异同平均线
-    case boll(Int, Int, Int)                    //boll
-
+    
     /**
      获取Key值的名称
      
@@ -55,8 +54,6 @@ public enum CHChartAlgorithm: CHChartAlgorithmProtocol {
             return "KDJ_\(name)"
         case .macd(_, _, _):
             return "MACD_\(name)"
-        case .boll(_, _, _):
-            return "BOLL_\(name)"
         
         }
     }
@@ -82,8 +79,6 @@ public enum CHChartAlgorithm: CHChartAlgorithmProtocol {
             return self.handleKDJ(p1, p2: p2, p3: p3, datas: datas)
         case let .macd(p1, p2, p3):
             return self.handleMACD(p1, p2: p2, p3: p3, datas: datas)
-        case let .boll(p1, p2, p3):
-            return self.handleBOLL(p1, p2: p2, p3: p3, datas: datas)
             
         }
     }
@@ -339,40 +334,4 @@ extension CHChartAlgorithm {
         return (ema_price, ema_vol)
     }
     
-}
-
-// MARK: - BOLL 处理算法
-extension CHChartAlgorithm {
-    /**
-     处理KDJ运算
-     
-     - parameter p1:    指标分析周期
-     - parameter p2:    指标分析周期
-     - parameter p3:    指标分析周期
-     - parameter datas: 未处理的集合
-     
-     - returns: 处理好的集合
-     */
-    fileprivate func handleBOLL(_ p1: Int, p2: Int,p3: Int, datas: [CHChartItem]) -> [CHChartItem] {
-        var prev_k: CGFloat = 50
-        var prev_d: CGFloat = 50
-        for (index, data) in datas.enumerated() {
-            //计算RSV值
-            if let rsv = self.getRSV(p1, index: index, datas: datas) {
-                //计算K,D,J值
-                let k: CGFloat = (2 * prev_k + rsv) / 3
-                let d: CGFloat = (2 * prev_d + k) / 3
-                let j: CGFloat = 3 * k - 2 * d
-                
-                prev_k = k
-                prev_d = d
-                
-                data.extVal["\(self.key("K"))"] = k
-                data.extVal["\(self.key("D"))"] = d
-                data.extVal["\(self.key("J"))"] = j
-            }
-        }
-        return datas
-    }
-
 }
