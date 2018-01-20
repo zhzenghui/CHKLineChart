@@ -114,19 +114,16 @@ public enum CHChartViewScrollPosition {
     @objc optional func hegihtForXAxis(in chart: CHKLineChartView) -> CGFloat
 }
 
-open class CHKLineChartView: UIView {
+open class CHKLineChartView: UIView, UIGestureRecognizerDelegate {
     
     /// MARK: - 常量
-    fileprivate static let kMinRange = 13       //最小缩放范围
-    fileprivate static let kMaxRange = 133     //最大缩放范围
-    fileprivate static let kPerInterval = 4    //缩放的每段间隔
+    let kMinRange = 13       //最小缩放范围
+    let kMaxRange = 133     //最大缩放范围
+    let kPerInterval = 4    //缩放的每段间隔
     open let kYAxisLabelWidth: CGFloat = 46        //默认宽度
-	open let kXAxisHegiht: CGFloat = 16        //默认X坐标的高度
-	
-	open var scaleRangeMin: Int = CHKLineChartView.kMinRange
-	open var scaleRangeMax: Int = CHKLineChartView.kMaxRange
-	open var pinchPerInterval: Int = CHKLineChartView.kPerInterval
-	
+    open let kXAxisHegiht: CGFloat = 16        //默认X坐标的高度
+    var isTouch : CGPoint?
+
     /// MARK: - 成员变量
     @IBInspectable open var upColor: UIColor = UIColor.green     //升的颜色
     @IBInspectable open var downColor: UIColor = UIColor.red     //跌的颜色
@@ -173,9 +170,6 @@ open class CHKLineChartView: UIView {
     /// 把X坐标内容显示到哪个索引分区上，默认为-1，表示最后一个，如果用户设置溢出的数值，也以最后一个
     open var showXAxisOnSection: Int = -1
     
-    /// 是否显示所有内容
-    open var isShowAll: Bool = false
-    
     var borderWidth: CGFloat = 0.5
     var lineWidth: CGFloat = 0.5
     var plotCount: Int = 0
@@ -214,7 +208,6 @@ open class CHKLineChartView: UIView {
             self.enablePan = self.style.enablePan
             self.showSelection = self.style.showSelection
             self.showXAxisOnSection = self.style.showXAxisOnSection
-            self.isShowAll = self.style.isShowAll
         }
         
     }
@@ -283,7 +276,6 @@ open class CHKLineChartView: UIView {
             target: self,
             action: #selector(doPanAciton(_:)))
         pan.delegate = self
-        
         self.addGestureRecognizer(pan)
         
         //点击手势操作
@@ -292,13 +284,10 @@ open class CHKLineChartView: UIView {
         tap.delegate = self
         self.addGestureRecognizer(tap)
         
-        
         //双指缩放操作
-        let pinch = UIPinchGestureRecognizer(
+        self.addGestureRecognizer(UIPinchGestureRecognizer(
             target: self,
-            action: #selector(doPinchAction(_:)))
-        pinch.delegate = self
-        self.addGestureRecognizer(pinch)
+            action: #selector(doPinchAction(_:))))
         
         //初始数据
         self.resetData()
@@ -543,11 +532,6 @@ extension CHKLineChartView {
         
         if plotCount > 0 {
             
-            //如果显示全部，显示范围为全部数据量
-            if self.isShowAll {
-                self.range = self.plotCount
-            }
-            
             //图表刷新滚动为默认时，如果第一次初始化，就默认滚动到最后显示
             if self.scrollToPosition == .none {
                 //如果图表尽头的索引为0，则进行初始化
@@ -748,7 +732,6 @@ extension CHKLineChartView {
      */
     fileprivate func drawSection(_ section: CHSection) {
         
-        
         let context = UIGraphicsGetCurrentContext()
         context?.setShouldAntialias(false)
         context?.setLineWidth(self.lineWidth)
@@ -902,10 +885,12 @@ extension CHKLineChartView {
                 //突出的线段
                 context?.setShouldAntialias(false)
                 context?.setStrokeColor(self.dashColor.cgColor)
-                context?.move(to: CGPoint(x: extrude, y: iy))
-                context?.addLine(to: CGPoint(x: extrude + 2, y: iy))
+                context?.move(to: CGPoint(x: section.frame.origin.x + section.padding.left + section.frame.size.width - section.padding.right, y: iy))
+                context?.addLine(to: CGPoint(x: section.frame.origin.x + section.padding.left + section.frame.size.width - section.padding.right + 2, y: iy))
                 context?.strokePath()
                 
+                //把Y轴标签文字画上去
+                context?.setShouldAntialias(true)  //抗锯齿开启，解决字体发虚
                 
                 let strValue = self.delegate?.kLineChart(chart: self, labelOnYAxisForValue: yVal, section: section) ?? ""
                 
@@ -946,11 +931,6 @@ extension CHKLineChartView {
     /// - Parameter yAxisToDraw:
     fileprivate func drawYAxisLabel(_ yAxisToDraw: [(CGRect, String)]) {
         
-        let context = UIGraphicsGetCurrentContext()
-        
-        //把Y轴标签文字画上去
-        context?.setShouldAntialias(true)  //抗锯齿开启，解决字体发虚
-        
         let paragraphStyle = NSMutableParagraphStyle()
         
         //分区中各个y轴虚线和y轴的label
@@ -989,7 +969,6 @@ extension CHKLineChartView {
         } else {
             //不分页显示，全部系列绘制到图表上
             for serie in section.series {
-                
                 self.drawSerie(serie)
             }
         }
@@ -1079,21 +1058,38 @@ extension CHKLineChartView {
 
 
 // MARK: - 手势操作
-extension CHKLineChartView: UIGestureRecognizerDelegate {
-    
-    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        switch gestureRecognizer {
-        case is UITapGestureRecognizer:
-            return self.enableTap
-        case is UIPanGestureRecognizer:
-            return self.enablePan
-        case is UIPinchGestureRecognizer:
-            return self.enablePinch
-        default:
+extension CHKLineChartView {
+
+
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        
+        if (gestureRecognizer is UIPanGestureRecognizer  ) {
+            
+            let sender = gestureRecognizer as! UIPanGestureRecognizer
+            let translation = sender.translation(in: self)
+            let velocity =  sender.velocity(in: self)
+            var interval: Int = 0
+            
+            //处理滑动的幅度
+            let panRange = fabs(velocity.x)    //滑动的力度
+            interval = Int(panRange / 50)              //力度大于x才移动
+            if (interval > 2) {                     //移动的间隔不超过interval
+                return false
+            }
+            else {
+                return true
+            }
+            
+            
+        } else {
             return false
         }
     }
-    
+
+
+
+
+
     /**
      *  拖动操作
      *
@@ -1105,12 +1101,17 @@ extension CHKLineChartView: UIGestureRecognizerDelegate {
             return
         }
         
+        
+        
 //        let plotWidth = (self.sections[0].frame.size.width - self.sections[0].padding.left - self.sections[0].padding.right) / CGFloat(self.range)
         
         let translation = sender.translation(in: self)
         let velocity =  sender.velocity(in: self)
         
         var interval: Int = 0
+        let location = sender.location(in: sender.view)
+        let event = UIEvent()
+        self.hitTest(location, with: event)
         
         //处理滑动的幅度
         let panRange = fabs(velocity.x)    //滑动的力度
@@ -1196,7 +1197,7 @@ extension CHKLineChartView: UIGestureRecognizerDelegate {
         }
         
         //双指合拢或张开
-        let interval = pinchPerInterval / 2
+        let interval = self.kPerInterval / 2
         let scale = sender.scale
         let velocity = sender.velocity
         
@@ -1209,7 +1210,7 @@ extension CHKLineChartView: UIGestureRecognizerDelegate {
                 newRangeTo = self.rangeTo - interval
                 newRangeFrom = self.rangeFrom + interval
                 newRange = self.rangeTo - self.rangeFrom
-                if newRange >= scaleRangeMin {
+                if newRange >= kMinRange {
                     
                     if self.plotCount > self.rangeTo - self.rangeFrom {
                         if newRangeFrom < self.rangeTo {
@@ -1232,7 +1233,7 @@ extension CHKLineChartView: UIGestureRecognizerDelegate {
                 newRangeTo = self.rangeTo + interval
                 newRangeFrom = self.rangeFrom - interval
                 newRange = self.rangeTo - self.rangeFrom
-                if newRange <= scaleRangeMax {
+                if newRange <= kMaxRange {
                     
                     if newRangeFrom >= 0 {
                         self.rangeFrom = newRangeFrom
